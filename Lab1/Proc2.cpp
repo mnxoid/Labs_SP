@@ -1,5 +1,6 @@
 #include <iostream>
 #include <windows.h>
+#include "util.h"
 using namespace std;
 int Proc2()
 {
@@ -34,10 +35,10 @@ int Proc2()
 		cout << "WaitForSingleObject failed (" << GetLastError() << ")" << endl;
 	else cout << "Timer was signaled." << endl;
 
-	while (getchar() != '\n') continue;
+	myGetch();
 	if (!CloseHandle(timerHandle)) cout << "Timer deletion failed" << endl; else cout << "Timer successfully deleted!" << endl;
 	if (!CloseHandle(mutexHandle)) cout << "Mutex deletion failed" << endl; else cout << "Mutex successfully deleted!" << endl;
 	if (!CloseHandle(semaphoreHandle)) cout << "Semaphore deletion failed" << endl; else cout << "Semaphore successfully deleted!" << endl;
-	while (getchar() != '\n') continue;
+	myGetch();
 	return 0;
 }

@@ -67,6 +67,8 @@
     <ClCompile Include="Proc1.cpp" />
     <ClCompile Include="Proc2.cpp" />
     <ClCompile Include="Proc3.cpp" />
+    <ClCompile Include="Proc4.cpp" />
+    <ClCompile Include="Proc5.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>

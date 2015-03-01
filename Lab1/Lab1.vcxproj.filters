@@ -30,6 +30,12 @@
     <ClCompile Include="Proc3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Proc4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Proc5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="util.h">

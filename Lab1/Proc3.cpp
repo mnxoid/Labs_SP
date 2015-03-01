@@ -24,7 +24,7 @@ int Proc3()
 		return 1;
 	}
 	cout << "Semaphore opened! press enter";
-	while (getchar() != '\n');
+	myGetch();
 	// Create worker threads
 
 	for (i = 0; i < THREADCOUNT; i++)
@@ -54,7 +54,7 @@ int Proc3()
 		CloseHandle(aThread[i]);
 
 	CloseHandle(ghSemaphore);
-	while (getchar() != '\n');
+	myGetch();
 	return 0;
 }
 
