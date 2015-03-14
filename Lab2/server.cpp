@@ -22,10 +22,12 @@
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/asio/deadline_timer.hpp>
 #include "util.h"
 //------------------Namespaces----------------------------------
 using namespace std;
 using boost::asio::ip::udp;
+using boost::asio::deadline_timer;
 //------------------Disclaimer----------------------------------
 /**
  * @brief       This function displays license agreement
@@ -140,7 +142,29 @@ bool enabled = true;
   {
     return socket_;
   }
+ void check_deadline()
+  {
+    // Check whether the deadline has passed. We compare the deadline against
+    // the current time since a new asynchronous operation may have moved the
+    // deadline before this actor had a chance to run.
+    if (dt.expires_at() <= deadline_timer::traits_type::now())
+    {
+      // The deadline has passed. The outstanding asynchronous operation needs
+      // to be cancelled so that the blocked receive() function will return.
+      //
+      // Please note that cancel() has portability issues on some versions of
+      // Microsoft Windows, and it may be necessary to use close() instead.
+      // Consult the documentation for cancel() for further information.
+      socket_.cancel();
+      cout << "Timeout actually works" << endl;
+      // There is no longer an active deadline. The expiry is set to positive
+      // infinity so that the actor takes no action until a new deadline is set.
+      dt.expires_at(boost::posix_time::pos_infin);
+    }
 
+    // Put the actor back to sleep.
+    dt.async_wait(boost::bind(&tcp_connection::check_deadline, this));
+  }
   void start()
   {
   	if(enabled)
@@ -148,10 +172,11 @@ bool enabled = true;
       boost::system::error_code error;
     boost::array<char, 128> buf;
     
+    dt.expires_from_now(boost::posix_time::seconds(60));
     size_t len = socket_.read_some(boost::asio::buffer(buf), error);
     string got_mess(buf.begin(), buf.begin()+len);
     
-
+    dt.expires_at(boost::posix_time::pos_infin);
 	    message_ = make_daytime_string(got_mess);
 
 	    boost::asio::async_write(socket_, boost::asio::buffer(message_),
@@ -165,9 +190,10 @@ bool enabled = true;
   }
 
 private:
-  tcp_connection(boost::asio::io_service& io_service)
-    : socket_(io_service)
+  tcp_connection(boost::asio::io_service& io_service1)
+    : socket_(io_service1), dt(io_service1)
   {
+    check_deadline();
   }
 
   void handle_write(const boost::system::error_code& /*error*/,
@@ -178,6 +204,7 @@ private:
 
   tcp::socket socket_;
   std::string message_;
+  deadline_timer dt;
 };
 
 class tcp_server
@@ -236,7 +263,7 @@ int main(int argc, char* argv[])
 	{
 		boost::asio::io_service io_service;
 		udp_server server(io_service,atoi(argv[1]));
-    nextport = 1338+20*(atoi(argv[1])-1337);
+    nextport = 1338+20*(atoi(argv[1])-1336);
 		io_service.run();
 	}
 	catch (std::exception& e)
