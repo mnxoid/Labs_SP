@@ -14,15 +14,23 @@
 //------------------Includes------------------------------------
 #include <stdio.h>
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
+#include <boost/bind.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/ip/udp.hpp>
 #include "util.h"
 //------------------Namespaces----------------------------------
 using namespace std;
 using namespace boost::asio;
 using boost::asio::ip::tcp;
 using boost::asio::ip::udp;
+using boost::asio::deadline_timer;
 //------------------Disclaimer----------------------------------
+boost::array<char, 256> recv_buffer_;
+string got;
 /**
  * @brief       This function displays license agreement
  **/
@@ -38,17 +46,18 @@ void Disclaimer (  )
 	printf ( "By pressing [ENTER] you confirm that you are NOT A GEODESIST\n" ) ; 
 	CleanInput (  ) ; //here CleanInput is used as a safe getchar (  ) 
  }
-//------------------Main function-------------------------------
-int main()
+void udpHandler(const boost::system::error_code& ec,
+    std::size_t len)
 {
-	Disclaimer();
-	cout << "Enter your name please: ";
-	string name;
-	cin >> name;
-	CleanInput();
+	got = string(recv_buffer_.begin(),recv_buffer_.begin()+len);
+    cout << got << endl;
+}
+//------------------Classes-------------------------------------
+void thrfun(int port,string name)
+{
 	io_service io_serviceSend;
 	udp::resolver resolver(io_serviceSend);
-    udp::resolver::query query(udp::v4(),"127.0.0.1","1337",boost::asio::ip::resolver_query_base::numeric_service);
+    udp::resolver::query query(udp::v4(),"127.0.0.1",to_string(port).c_str(),boost::asio::ip::resolver_query_base::numeric_service);
     udp::endpoint receiver_endpoint = *resolver.resolve(query);
 
     udp::socket socket(io_serviceSend);
@@ -63,11 +72,33 @@ int main()
     int len = socket.receive_from(boost::asio::buffer(recv_buffer_),receiver_endpoint);
     string got(recv_buffer_.begin(),recv_buffer_.begin()+len);
     cout << got << endl;
+}
+//------------------Main function-------------------------------
+int main()
+{
+
+	Disclaimer();
+	cout << "Enter your name please: ";
+	string name;
+	cin >> name;
+	CleanInput();
+	io_service io_serviceSend;
+	thread** thrs = new thread*[10];
+	cout << "Scanning servers..." << endl;
+	for(int i=0;i<10;i++)
+	{
+		//cout << "Trying port " << 1337+i << endl;
+		thrs[i] = new thread(thrfun,1337+i, name);
+	}
+ 	cout << endl;
 	//----------------------------------------------------------------------------------
 	{
-		int port1 = 1338;
-		char* ign = (char*)malloc(100);
-		sscanf(got.c_str(),"Hello, %s I am ready to listen on port %i",ign,&port1);
+		int port1;
+		cout << "Input port please ";
+		cin >> port1;
+		CleanInput();
+		// char* ign = (char*)malloc(100);
+		// sscanf(got.c_str(),"Hello, %s I am ready to listen on port %i",ign,&port1);
 		tcp::resolver resolver1(io_serviceSend);
 		tcp::resolver::query query("127.0.0.1",to_string(port1).c_str());
 		tcp::resolver::iterator endpoint_iterator = resolver1.resolve(query);
@@ -84,13 +115,7 @@ int main()
 		string message="hello";
 		for (;;)
 		{
-
-			boost::array<char, 128> buf;
-			boost::system::error_code error;
-			if (message=="quit") break;
-			size_t len = socket1.read_some(boost::asio::buffer(buf), error);
 			boost::system::error_code ignored_error;
-			std::cout.write(buf.data(), len);
 			a:
 			cout << "Your message: ";
 			
@@ -104,7 +129,14 @@ int main()
 			else if (error)
 				throw boost::system::system_error(error); // Some other error.
 	
+			boost::array<char, 128> buf;
+			boost::system::error_code error;
+	
+			size_t len = socket1.read_some(boost::asio::buffer(buf), error);
 			
+			std::cout.write(buf.data(), len);
+			
+			if (message=="quit") break;		
 			
 		}
 	}

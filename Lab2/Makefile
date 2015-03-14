@@ -4,11 +4,11 @@ c_release:
 c_debug:
 	gcc server.c util.c -o server -g
 cpp_release:
-	g++ server.cpp util.c -o server -lboost_system -lpthread -std=c++11
-	g++ client.cpp util.c -o client -lboost_system -lpthread -std=c++11
+	g++ server.cpp util.c -o server -lboost_system -lpthread -std=c++11 -fpermissive
+	g++ client.cpp util.c -o client -lboost_system -lpthread -std=c++11 -fpermissive
 cpp_debug:
-	g++ server.cpp util.c -o server -g -lboost_system -lpthread -std=c++11
-	g++ client.cpp util.c -o client -g -lboost_system -lpthread -std=c++11
+	g++ server.cpp util.c -o server -g -lboost_system -lpthread -std=c++11 -fpermissive
+	g++ client.cpp util.c -o client -g -lboost_system -lpthread -std=c++11 -fpermissive
 wc_release:
 	i586-mingw32msvc-gcc server.c util.c -o server.exe
 wc_debug:

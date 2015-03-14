@@ -113,11 +113,16 @@ private:
 //------------------TCP-----------------------------------------
 using boost::asio::ip::tcp;
 
-std::string make_daytime_string()
+std::string make_daytime_string(string orig_mess)
 {
   using namespace std; // For time_t, time and ctime;
   time_t now = time(0);
-  return ctime(&now);
+  if (orig_mess != "")
+  {
+    return (string(ctime(&now)) + "Message received - ") + orig_mess + "\n";
+  } else {
+    return ctime(&now);
+  }
 }
 
 class tcp_connection
@@ -140,12 +145,22 @@ bool enabled = true;
   {
   	if(enabled)
   	{
-	    message_ = make_daytime_string();
+      boost::system::error_code error;
+    boost::array<char, 128> buf;
+    
+    size_t len = socket_.read_some(boost::asio::buffer(buf), error);
+    string got_mess(buf.begin(), buf.begin()+len);
+    
+
+	    message_ = make_daytime_string(got_mess);
 
 	    boost::asio::async_write(socket_, boost::asio::buffer(message_),
 	        boost::bind(&tcp_connection::handle_write, shared_from_this(),
 	          boost::asio::placeholders::error,
 	          boost::asio::placeholders::bytes_transferred));
+      cout << got_mess << endl;
+      if(got_mess != "quit" && got_mess != "") start();
+      else throw boost::system::system_error(1,boost::system::system_category());
 	}
   }
 
@@ -158,12 +173,7 @@ private:
   void handle_write(const boost::system::error_code& /*error*/,
       size_t /*bytes_transferred*/)
   {
-  	boost::system::error_code error;
-  	boost::array<char, 128> buf;
-  	size_t len = socket_.read_some(boost::asio::buffer(buf), error);
-  	string got_mess(buf.begin(), buf.begin()+len);
-  	if(got_mess != "quit") start();
-  	else throw boost::system::system_error(1,boost::system::system_category());
+  	
   }
 
   tcp::socket socket_;
@@ -214,17 +224,19 @@ void tcp_threadFun()
   }
   catch (std::exception& e)
   {
+    cout << "Client disconnected! \n" << endl;
     //std::cerr << e.what() << std::endl;
   }
 }
 //------------------Main function-------------------------------
-int main()
+int main(int argc, char* argv[])
 {
 	Disclaimer();
-	try
+  try
 	{
 		boost::asio::io_service io_service;
-		udp_server server(io_service,1337);
+		udp_server server(io_service,atoi(argv[1]));
+    nextport = 1338+20*(atoi(argv[1])-1337);
 		io_service.run();
 	}
 	catch (std::exception& e)
