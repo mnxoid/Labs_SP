@@ -57,8 +57,10 @@ void thrfun(int port,string name)
 {
 	io_service io_serviceSend;
 	udp::resolver resolver(io_serviceSend);
-    udp::resolver::query query(udp::v4(),"127.0.0.1",to_string(port).c_str(),boost::asio::ip::resolver_query_base::numeric_service);
+	//Multicast:
+    udp::resolver::query query(udp::v4(),"224.0.0.251",to_string(port).c_str(),boost::asio::ip::resolver_query_base::numeric_service);
     udp::endpoint receiver_endpoint = *resolver.resolve(query);
+    //udp::endpoint receiver_endpoint(multicast_address, port);
 
     udp::socket socket(io_serviceSend);
     socket.open(udp::v4());
@@ -91,6 +93,7 @@ int main()
 		thrs[i] = new thread(thrfun,1337+i, name);
 	}
  	cout << endl;
+ 	this_thread::sleep_for(chrono::milliseconds(5000));
 	//----------------------------------------------------------------------------------
 	{
 		int port1;
