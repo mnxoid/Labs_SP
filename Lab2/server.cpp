@@ -46,6 +46,7 @@ void Disclaimer (  )
  }
 //------------------Globals-------------------------------------
 int nextport = 1338;
+char ipstr[20];
 void tcp_threadFun();
 //------------------Classes-------------------------------------
 //------------------UDP-----------------------------------------
@@ -76,6 +77,8 @@ private:
   	res+=string(username);
   	res+=", I am ready to listen on port ";
   	res+=to_string(nextport);
+    res+=", my ip is ";
+    res+=string(ipstr);
   	thread* thr = new thread(tcp_threadFun);
   	return string(res);
   }
@@ -259,6 +262,10 @@ void tcp_threadFun()
 int main(int argc, char* argv[])
 {
 	Disclaimer();
+  system("ifconfig | grep \"inet addr\" | grep -oE \"\\b([0-9]{1,3}\\.){3}[0-9]{1,3}\\b\" > temp.txt");
+  FILE* f = fopen("temp.txt","r");
+  fscanf(f,"%s",ipstr);
+  cout << ipstr << endl;
   try
 	{
 		boost::asio::io_service io_service;

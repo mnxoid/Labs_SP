@@ -21,6 +21,7 @@
 #include <boost/bind.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/udp.hpp>
+#include <netdb.h>
 #include "util.h"
 //------------------Namespaces----------------------------------
 using namespace std;
@@ -46,6 +47,30 @@ void Disclaimer (  )
 	printf ( "By pressing [ENTER] you confirm that you are NOT A GEODESIST\n" ) ; 
 	CleanInput (  ) ; //here CleanInput is used as a safe getchar (  ) 
  }
+int hostname_to_ip(char * hostname , char* ip)
+{
+    hostent *he;
+    in_addr **addr_list;
+    int i;
+         
+    if ( (he = gethostbyname( hostname ) ) == NULL) 
+    {
+        // get the host info
+        herror("gethostbyname");
+        return 1;
+    }
+ 
+    addr_list = (struct in_addr **) he->h_addr_list;
+     
+    for(i = 0; addr_list[i] != NULL; i++) 
+    {
+        //Return the first one;
+        strcpy(ip , inet_ntoa(*addr_list[i]) );
+        return 0;
+    }
+     
+    return 1;
+}
 void udpHandler(const boost::system::error_code& ec,
     std::size_t len)
 {
@@ -96,6 +121,9 @@ int main()
  	this_thread::sleep_for(chrono::milliseconds(5000));
 	//----------------------------------------------------------------------------------
 	{
+		string ipstr;
+		cout << "Input IP please ";
+		cin >> ipstr;
 		int port1;
 		cout << "Input port please ";
 		cin >> port1;
@@ -103,7 +131,7 @@ int main()
 		// char* ign = (char*)malloc(100);
 		// sscanf(got.c_str(),"Hello, %s I am ready to listen on port %i",ign,&port1);
 		tcp::resolver resolver1(io_serviceSend);
-		tcp::resolver::query query("127.0.0.1",to_string(port1).c_str());
+		tcp::resolver::query query(ipstr.c_str(),to_string(port1).c_str());
 		tcp::resolver::iterator endpoint_iterator = resolver1.resolve(query);
 		tcp::resolver::iterator end;
 		tcp::socket socket1(io_serviceSend);
